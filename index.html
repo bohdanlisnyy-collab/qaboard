@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QABOARD</title>
+<style>
+:root{--bg:#15171c;--panel:#1b1e25;--card:#242831;--bd:#2f3440;--tx:#e6e8ec;--mu:#8b92a0;--ac:#6e7bf2;--hi:#ef6b6b;--me:#e8b04b;--lo:#5bb98c;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:18px;margin:0;letter-spacing:.12em}
+h1 span{color:var(--ac)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--bd);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}
+button:hover{border-color:#4a5163}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.pri:hover{background:#7f8bf5}
+.dan{background:var(--hi);border-color:var(--hi);color:#fff;font-weight:600}
+.badge{font-size:12px;color:var(--mu);border:1px solid var(--bd);border-radius:20px;padding:3px 10px}
+.badge.warn{color:var(--me);border-color:var(--me)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--bd);border-radius:8px;padding:10px 14px}
+.stat b{display:block;font-size:22px}
+.stat span{color:var(--mu);font-size:12px}
+.stat.od b{color:var(--hi)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tools input{flex:1 1 200px}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+.col{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:10px;min-height:200px}
+.col.over{border-color:var(--ac);background:#1f2230}
+.col h2{font-size:12px;letter-spacing:.1em;color:var(--mu);margin:2px 4px 10px;display:flex;justify-content:space-between}
+.cnt{background:var(--card);border-radius:10px;padding:0 8px;color:var(--tx)}
+.card{background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--mu);border-radius:8px;padding:10px;margin-bottom:8px;cursor:grab}
+.card.high{border-left-color:var(--hi)}.card.medium{border-left-color:var(--me)}.card.low{border-left-color:var(--lo)}
+.card.dragging{opacity:.4}
+.card h3{margin:0 0 4px;font-size:14px;overflow-wrap:anywhere}
+.card.done h3{text-decoration:line-through;color:var(--mu)}
+.desc{color:var(--mu);font-size:13px;margin:0 0 6px;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tags{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--mu);margin-bottom:8px}
+.tag{border:1px solid var(--bd);border-radius:4px;padding:1px 6px}
+.tag.od{color:var(--hi);border-color:var(--hi)}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.acts select,.acts button{font-size:12px;padding:3px 6px}
+.acts .sp{flex:1}
+.empty{color:var(--mu);text-align:center;border:1px dashed var(--bd);border-radius:8px;padding:22px 10px;font-size:13px}
+dialog{background:var(--panel);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:18px;width:min(480px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{margin:0 0 12px;font-size:16px}
+label{display:block;font-size:12px;color:var(--mu);margin:10px 0 4px}
+dialog input,dialog textarea,dialog select{width:100%}
+textarea{resize:vertical;min-height:70px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.err{color:var(--hi);font-size:12px;min-height:16px;margin-top:3px}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+.note{color:var(--mu);font-size:12px;margin:0 0 8px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 16px;display:none;z-index:50}
+#auth{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+#auth .box{background:var(--panel);border:1px solid var(--bd);border-radius:12px;padding:22px;width:min(380px,100%)}
+#auth input{width:100%}
+@media(max-width:860px){.board{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+</style></head>
+<body><div class="wrap">
+<header>
+ <h1>QA<span>BOARD</span></h1>
+ <div class="row">
+  <span id="store" class="badge" hidden></span><button id="bOut" hidden>Sign out</button>
+  <button id="bBackup">Backup / Restore</button>
+  <button id="bNew" class="pri">+ New task</button>
+ </div>
+</header>
+<section class="stats">
+ <div class="stat"><b id="sT">0</b><span>Total tasks</span></div>
+ <div class="stat"><b id="sP">0</b><span>In progress</span></div>
+ <div class="stat"><b id="sD">0</b><span>Completed</span></div>
+ <div class="stat od"><b id="sO">0</b><span>Overdue</span></div>
+</section>
+<section class="tools">
+ <input id="q" type="search" placeholder="Search title or description…" aria-label="Search tasks">
+ <select id="fP" aria-label="Filter by priority"><option value="">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+ <select id="fC" aria-label="Filter by category"><option value="">All categories</option><option value="work">Work</option><option value="personal">Personal</option><option value="learning">Learning</option></select>
+ <select id="sort" aria-label="Sort tasks"><option value="created">Sort: newest created</option><option value="due">Sort: due date (soonest)</option></select>
+ <button id="bClear">Clear filters</button>
+</section>
+<main class="board" id="board"></main>
+</div>
+
+<dialog id="dTask"><form method="dialog" id="fTask" novalidate>
+ <h2 id="tTitle">New task</h2>
+ <label for="fTitle">Title *</label><input id="fTitle" maxlength="120" autocomplete="off">
+ <div class="err" id="eTitle"></div>
+ <label for="fDesc">Description</label><textarea id="fDesc" maxlength="1000"></textarea>
+ <div class="grid2">
+  <div><label for="fStatus">Status</label><select id="fStatus"><option value="todo">To Do</option><option value="progress">In Progress</option><option value="done">Done</option></select></div>
+  <div><label for="fPri">Priority</label><select id="fPri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+  <div><label for="fCat">Category</label><select id="fCat"><option value="work">Work</option><option value="personal">Personal</option><option value="learning">Learning</option></select></div>
+  <div><label for="fDue">Due date</label><input id="fDue" type="date"></div>
+ </div>
+ <div class="foot"><button type="button" id="tCancel">Cancel</button><button type="submit" class="pri" id="tSave">Save task</button></div>
+</form></dialog>
+
+<dialog id="dConf"><h2 id="cTitle"></h2><p id="cMsg" class="note"></p>
+ <div class="foot"><button id="cNo">Cancel</button><button id="cYes" class="dan">Confirm</button></div></dialog>
+
+<dialog id="dBack"><h2>Backup / Restore</h2>
+ <p class="note">Copy this JSON and keep it somewhere safe (a notes app or a file). To restore, paste a backup into the box and press “Restore from text”, or choose a .json file.</p>
+ <textarea id="bText" style="min-height:160px;font:12px monospace" spellcheck="false"></textarea>
+ <div class="err" id="bErr"></div>
+ <div class="foot">
+  <button id="bCopy">Copy</button><button id="bDown">Download .json</button>
+  <button id="bFile">Choose file…</button><input type="file" id="bIn" accept=".json,application/json" hidden>
+  <button id="bRest" class="pri">Restore from text</button><button id="bClose">Close</button>
+ </div></dialog>
+<div id="auth"><div class="box">
+ <h1 style="margin-bottom:6px">QA<span>BOARD</span></h1>
+ <p class="note">Sign in to sync your tasks between all your devices.</p>
+ <label for="aMail">Email</label><input id="aMail" type="email" autocomplete="email">
+ <label for="aPass">Password (min. 6 characters)</label><input id="aPass" type="password" autocomplete="current-password">
+ <div class="err" id="aMsg"></div>
+ <div class="foot"><button id="aUp">Create account</button><button id="aIn" class="pri">Sign in</button></div>
+</div></div>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ===== PASTE YOUR SUPABASE KEYS HERE (Project Settings -> API) =====
+const SUPABASE_URL='https://vgvgpjdldvzjrsqafiwh.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_rlbURtE0pSX930Ix2W-H5g_Y0AUKtwF';
+// ====================================================================
+
+const COLS=[['todo','TO DO'],['progress','IN PROGRESS'],['done','DONE']];
+const PRI={low:'Low',medium:'Medium',high:'High'}, CAT={work:'Work',personal:'Personal',learning:'Learning'}, STA={todo:'To Do',progress:'In Progress',done:'Done'};
+let tasks=[], storageOk=false, editId=null, confirmFn=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addDays=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d)};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmt=s=>{const p=s.slice(0,10).split('-');return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})};
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2600)}
+
+function samples(){const now=new Date().toISOString();const mk=(title,description,status,priority,category,due)=>({id:uid(),title,description,status,priority,category,due,created:now});return[
+ mk('Prepare test cases for a new feature','Cover happy path, edge cases and negative scenarios for the new checkout flow.','todo','high','work',addDays(2)),
+ mk('Test API error handling','Check 400, 401, 404 and 500 responses and make sure error messages are clear.','progress','medium','work',addDays(4)),
+ mk('Learn Python basics','Finish variables, loops and functions chapters.','progress','low','learning',addDays(14)),
+ mk('Review outstanding bugs','Triage open bugs and re-test the fixes that are ready.','todo','high','work',addDays(-1)),
+ mk('Plan personal tasks for the week','Groceries, gym schedule and a call with family.','done','medium','personal','')]}
+
+const sb=(window.supabase&&SUPABASE_URL.startsWith('http'))?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+let user=null;
+const fromRow=r=>({id:r.id,title:r.title,description:r.description||'',status:r.status,priority:r.priority,category:r.category,due:r.due||'',created:r.created_at});
+const toRow=t=>({title:t.title,description:t.description||'',status:t.status,priority:t.priority,category:t.category,due:t.due||null});
+async function run(p,okMsg){try{const r=await p;if(r.error)throw r.error;if(okMsg)toast(okMsg);return r}catch(e){toast('Error: '+(e.message||e)+' (reloading from server)');await load();return null}}
+async function load(){const r=await sb.from('tasks').select('*');if(r.error){toast('Could not load tasks: '+r.error.message);return}tasks=r.data.map(fromRow);render()}
+function badge(){const b=$('#store');b.hidden=!user;b.textContent=user?user.email:''}
+function norm(t){if(!t||typeof t.title!=='string'||!t.title.trim())return null;const pick=(v,o,d)=>o[v]?v:d;
+ return{id:typeof t.id==='string'&&t.id?t.id:uid(),title:t.title.trim().slice(0,120),description:typeof t.description==='string'?t.description:'',status:pick(t.status,STA,'todo'),priority:pick(t.priority,PRI,'medium'),category:pick(t.category,CAT,'work'),due:/^\d{4}-\d{2}-\d{2}$/.test(t.due||'')?t.due:'',created:typeof t.created==='string'&&t.created?t.created:new Date().toISOString()}}
+
+const overdue=t=>t.due&&t.status!=='done'&&t.due<ymd(new Date());
+function visible(){const q=$('#q').value.trim().toLowerCase(),p=$('#fP').value,c=$('#fC').value,s=$('#sort').value;
+ const l=tasks.filter(t=>(!q||(t.title+' '+t.description).toLowerCase().includes(q))&&(!p||t.priority===p)&&(!c||t.category===c));
+ l.sort(s==='due'?(a,b)=>(a.due||'9999').localeCompare(b.due||'9999')||b.created.localeCompare(a.created):(a,b)=>b.created.localeCompare(a.created));return l}
+
+function render(){
+ const l=visible(),filtering=$('#q').value||$('#fP').value||$('#fC').value;
+ $('#sT').textContent=tasks.length;$('#sP').textContent=tasks.filter(t=>t.status==='progress').length;
+ $('#sD').textContent=tasks.filter(t=>t.status==='done').length;$('#sO').textContent=tasks.filter(overdue).length;
+ const opt=(o,v)=>Object.keys(o).map(k=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+o[k]+'</option>').join('');
+ $('#board').innerHTML=COLS.map(([k,name])=>{const items=l.filter(t=>t.status===k);
+  const cards=items.length?items.map(t=>'<article class="card '+t.priority+(t.status==='done'?' done':'')+'" draggable="true" data-id="'+esc(t.id)+'">'+
+   '<h3>'+esc(t.title)+'</h3>'+(t.description?'<p class="desc">'+esc(t.description)+'</p>':'')+
+   '<div class="tags"><span class="tag">'+PRI[t.priority]+'</span><span class="tag">'+CAT[t.category]+'</span>'+
+   (t.due?'<span class="tag'+(overdue(t)?' od':'')+'">'+(overdue(t)?'Overdue · ':'Due ')+fmt(t.due)+'</span>':'')+
+   '<span class="tag">Created '+fmt(t.created)+'</span></div>'+
+   '<div class="acts"><select data-f="status" aria-label="Status">'+opt(STA,t.status)+'</select>'+
+   '<select data-f="priority" aria-label="Priority">'+opt(PRI,t.priority)+'</select><span class="sp"></span>'+
+   '<button data-a="edit">Edit</button><button data-a="del">Delete</button></div></article>').join('')
+  :'<div class="empty">'+(filtering?'No matching tasks here.':k==='todo'?'Nothing to do. Add a task to get started.':k==='progress'?'Nothing in progress. Drag a task here to start.':'No completed tasks yet.')+'</div>';
+  return'<section class="col" data-col="'+k+'"><h2>'+name+'<span class="cnt">'+items.length+'</span></h2>'+cards+'</section>'}).join('')}
+
+function move(id,status){const t=tasks.find(x=>x.id===id);if(!t||t.status===status)return;t.status=status;render();run(sb.from('tasks').update({status}).eq('id',id),'Moved to '+STA[status])}
+
+// board events
+const board=$('#board');let dragId=null;
+board.addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragId=c.dataset.id;e.dataTransfer.setData('text/plain',dragId);e.dataTransfer.effectAllowed='move';setTimeout(()=>c.classList.add('dragging'),0)});
+board.addEventListener('dragend',()=>{dragId=null;render()});
+board.addEventListener('dragover',e=>{const c=e.target.closest('.col');if(!c||!dragId)return;e.preventDefault();document.querySelectorAll('.col.over').forEach(x=>x!==c&&x.classList.remove('over'));c.classList.add('over')});
+board.addEventListener('drop',e=>{const c=e.target.closest('.col');if(!c||!dragId)return;e.preventDefault();const id=dragId;dragId=null;move(id,c.dataset.col)});
+board.addEventListener('change',e=>{const f=e.target.dataset.f;if(!f)return;const t=tasks.find(x=>x.id===e.target.closest('.card').dataset.id);if(!t)return;t[f]=e.target.value;render();run(sb.from('tasks').update({[f]:t[f]}).eq('id',t.id),f==='status'?'Moved to '+STA[t.status]:'Priority set to '+PRI[t.priority])});
+board.addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const t=tasks.find(x=>x.id===b.closest('.card').dataset.id);if(!t)return;
+ if(b.dataset.a==='edit')openTask(t);else ask('Delete this task?','“'+t.title+'” will be permanently removed.','Delete',()=>{tasks=tasks.filter(x=>x.id!==t.id);render();run(sb.from('tasks').delete().eq('id',t.id),'Task deleted')})});
+
+// task dialog
+function openTask(t){editId=t?t.id:null;$('#tTitle').textContent=t?'Edit task':'New task';$('#tSave').textContent=t?'Save changes':'Create task';$('#eTitle').textContent='';
+ $('#fTitle').value=t?t.title:'';$('#fDesc').value=t?t.description:'';$('#fStatus').value=t?t.status:'todo';$('#fPri').value=t?t.priority:'medium';$('#fCat').value=t?t.category:'work';$('#fDue').value=t?t.due:'';
+ $('#dTask').showModal();$('#fTitle').focus()}
+$('#fTask').addEventListener('submit',async e=>{e.preventDefault();const title=$('#fTitle').value.trim();
+ if(!title){$('#eTitle').textContent='Title is required.';$('#fTitle').focus();return}
+ const data={title,description:$('#fDesc').value.trim(),status:$('#fStatus').value,priority:$('#fPri').value,category:$('#fCat').value,due:$('#fDue').value};
+ let ok=null;
+ if(editId){Object.assign(tasks.find(x=>x.id===editId),data);render();ok=await run(sb.from('tasks').update(toRow(data)).eq('id',editId),'Task updated')}
+ else{ok=await run(sb.from('tasks').insert(toRow(data)).select().single(),'Task created');if(ok){tasks.push(fromRow(ok.data));render()}}
+ if(ok)$('#dTask').close()});
+$('#tCancel').onclick=()=>$('#dTask').close();
+$('#bNew').onclick=()=>openTask(null);
+
+// confirm dialog
+function ask(title,msg,label,fn){$('#cTitle').textContent=title;$('#cMsg').textContent=msg;$('#cYes').textContent=label;confirmFn=fn;$('#dConf').showModal()}
+$('#cNo').onclick=()=>$('#dConf').close();
+$('#cYes').onclick=()=>{$('#dConf').close();if(confirmFn)confirmFn();confirmFn=null};
+
+// filters
+['#q','#fP','#fC','#sort'].forEach(s=>$(s).addEventListener('input',render));
+$('#bClear').onclick=()=>{$('#q').value='';$('#fP').value='';$('#fC').value='';$('#sort').value='created';render();toast('Filters cleared')};
+
+// backup / restore
+const json=()=>JSON.stringify({app:'QABOARD',v:1,exported:new Date().toISOString(),tasks},null,2);
+$('#bBackup').onclick=()=>{$('#bText').value=json();$('#bErr').textContent='';$('#dBack').showModal()};
+$('#bClose').onclick=()=>$('#dBack').close();
+$('#bCopy').onclick=async()=>{const ta=$('#bText');ta.value=json();try{await navigator.clipboard.writeText(ta.value);toast('Backup copied')}catch(e){ta.select();try{document.execCommand('copy');toast('Backup copied')}catch(_){toast('Select the text and copy it manually')}}};
+$('#bDown').onclick=()=>{try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json()],{type:'application/json'}));a.download='qaboard-backup-'+ymd(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();toast('Download started. If nothing happens, use Copy instead.')}catch(e){toast('Download blocked here. Use Copy instead.')}};
+function restore(text){let o;try{o=JSON.parse(text)}catch(e){$('#bErr').textContent='That is not valid JSON.';return}
+ const arr=Array.isArray(o)?o:o&&o.tasks;if(!Array.isArray(arr)){$('#bErr').textContent='No tasks array found in this backup.';return}
+ const list=arr.map(norm).filter(Boolean);if(!list.length&&arr.length){$('#bErr').textContent='No valid tasks found (each task needs a title).';return}
+ $('#bErr').textContent='';ask('Restore '+list.length+' task(s)?','This replaces all current tasks ('+tasks.length+'). Tip: copy a backup first if unsure.','Restore',async()=>{const old=tasks.map(t=>t.id);const r=await run(sb.from('tasks').insert(list.map(toRow)));if(!r)return;if(old.length)await run(sb.from('tasks').delete().in('id',old));await load();$('#dBack').close();toast('Restored '+list.length+' task(s)')})}
+$('#bRest').onclick=()=>restore($('#bText').value);
+$('#bFile').onclick=()=>$('#bIn').click();
+$('#bIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#bText').value=r.result;restore(r.result)};r.onerror=()=>{$('#bErr').textContent='Could not read that file.'};r.readAsText(f);e.target.value=''};
+
+function showAuth(on){$('#auth').style.display=on?'flex':'none'}
+async function enter(sess){user=sess&&sess.user||null;showAuth(!user);$('#bOut').hidden=!user;badge();if(user)await load();else{tasks=[];render()}}
+async function authGo(mode){const email=$('#aMail').value.trim(),password=$('#aPass').value,m=$('#aMsg');m.textContent='';
+ if(!email||password.length<6){m.textContent='Enter an email and a password of at least 6 characters.';return}
+ const r=mode==='up'?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+ if(r.error){m.textContent=r.error.message;return}
+ if(mode==='up'&&!r.data.session)m.textContent='Account created. Confirm your email via the link we sent, then sign in.'}
+$('#aIn').onclick=()=>authGo('in');$('#aUp').onclick=()=>authGo('up');
+$('#aPass').addEventListener('keydown',e=>{if(e.key==='Enter')authGo('in')});
+$('#bOut').onclick=()=>sb&&sb.auth.signOut();
+render();
+if(!sb){showAuth(true);$('#aMsg').textContent='Setup needed: paste your Supabase URL and anon key at the top of the script.'}
+else sb.auth.onAuthStateChange((ev,sess)=>{const id=sess&&sess.user&&sess.user.id;if(ev==='TOKEN_REFRESHED'||(id&&user&&user.id===id))return;setTimeout(()=>enter(sess),0)});
+</script></body></html>
